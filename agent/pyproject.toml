@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ddas-agent"
+version = "0.2.0"
+description = "DDAS Local Agent - Permission validation, feature extraction, decision making"
+requires-python = ">=3.9"
+
+dependencies = [
+    "requests>=2.28.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+ddas-agent = "app.main:main"
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+python_files = "test_*.py"
+
+[tool.black]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.9"
+strict = true

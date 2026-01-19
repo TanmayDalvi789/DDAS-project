@@ -1,0 +1,28 @@
+{
+  "exact_match": {
+    "is_match": false,
+    "similarity_type": "exact",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  },
+  "fuzzy_match": {
+    "is_match": false,
+    "similarity_type": "fuzzy",
+    "score": 0.15,
+    "reference_id": null,
+    "reference_metadata": null
+  },
+  "semantic_match": {
+    "is_match": true,
+    "similarity_type": "semantic",
+    "score": 0.78,
+    "reference_id": "ref_003",
+    "reference_metadata": {
+      "filename": "suspicious_behavior_detected.bin",
+      "threat_level": "medium",
+      "family": "behavioral_anomaly",
+      "first_seen": "2025-11-20T00:00:00Z"
+    }
+  }
+}

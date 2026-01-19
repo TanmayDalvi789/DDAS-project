@@ -1,0 +1,28 @@
+{
+  "exact_match": {
+    "is_match": true,
+    "similarity_type": "exact",
+    "score": 1.0,
+    "reference_id": "ref_001",
+    "reference_metadata": {
+      "filename": "malware.exe",
+      "threat_level": "critical",
+      "family": "trojan",
+      "first_seen": "2025-01-01T00:00:00Z"
+    }
+  },
+  "fuzzy_match": {
+    "is_match": false,
+    "similarity_type": "fuzzy",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  },
+  "semantic_match": {
+    "is_match": false,
+    "similarity_type": "semantic",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  }
+}

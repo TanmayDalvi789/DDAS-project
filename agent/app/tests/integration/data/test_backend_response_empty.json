@@ -1,0 +1,23 @@
+{
+  "exact_match": {
+    "is_match": false,
+    "similarity_type": "exact",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  },
+  "fuzzy_match": {
+    "is_match": false,
+    "similarity_type": "fuzzy",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  },
+  "semantic_match": {
+    "is_match": false,
+    "similarity_type": "semantic",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  }
+}

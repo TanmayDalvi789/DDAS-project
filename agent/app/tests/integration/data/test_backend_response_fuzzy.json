@@ -1,0 +1,28 @@
+{
+  "exact_match": {
+    "is_match": false,
+    "similarity_type": "exact",
+    "score": 0.0,
+    "reference_id": null,
+    "reference_metadata": null
+  },
+  "fuzzy_match": {
+    "is_match": true,
+    "similarity_type": "fuzzy",
+    "score": 0.82,
+    "reference_id": "ref_002",
+    "reference_metadata": {
+      "filename": "suspicious_file.exe",
+      "threat_level": "medium",
+      "family": "potentially_unwanted",
+      "first_seen": "2025-06-15T00:00:00Z"
+    }
+  },
+  "semantic_match": {
+    "is_match": false,
+    "similarity_type": "semantic",
+    "score": 0.35,
+    "reference_id": null,
+    "reference_metadata": null
+  }
+}

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDAS Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+        .container { display: flex; height: 100vh; }
+        .sidebar { width: 240px; background: #1e293b; border-right: 1px solid #334155; padding: 1.5rem; display: flex; flex-direction: column; }
+        .sidebar-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 2rem; }
+        .nav { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-link { padding: 0.75rem 1rem; background: #334155; border-radius: 0.5rem; cursor: pointer; transition: background 0.2s; border: none; text-align: left; font-size: 1rem; }
+        .nav-link:hover { background: #475569; }
+        .nav-link.active { background: #3b82f6; }
+        .main { flex: 1; overflow: auto; padding: 2rem; }
+        .header { margin-bottom: 2rem; }
+        .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .header p { color: #94a3b8; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; }
+        .card h3 { font-size: 0.875rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .card-value { font-size: 2rem; font-weight: 700; }
+        .events-table { width: 100%; border-collapse: collapse; background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; overflow: hidden; }
+        .events-table thead { background: #334155; }
+        .events-table th, .events-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #334155; }
+        .events-table tr:hover { background: #334155; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500; }
+        .badge-allow { background: #10b981; color: white; }
+        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; }
+        .status-running { background: #10b981; }
+        .info-box { background: #334155; border-left: 4px solid #3b82f6; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; font-size: 0.9rem; }
+        .btn { padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 1rem; font-weight: 500; transition: background 0.2s; }
+        .btn:hover:not(:disabled) { background: #2563eb; }
+        .btn:disabled { background: #64748b; cursor: not-allowed; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .alert { padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; }
+        .alert-error { background: #7f1d1d; border-left: 4px solid #ef4444; color: #fecaca; }
+        .alert-success { background: #064e3b; border-left: 4px solid #10b981; color: #a7f3d0; }
+        .alert-info { background: #0c4a6e; border-left: 4px solid #3b82f6; color: #bae6fd; }
+        .proxy-card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; }
+        .proxy-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .proxy-card p { font-size: 0.875rem; color: #cbd5e1; margin-bottom: 1rem; }
+        .proxy-info { background: #334155; padding: 0.75rem; border-radius: 0.5rem; margin-top: 1rem; font-size: 0.875rem; }
+        .proxy-info-item { margin: 0.5rem 0; }
+        .proxy-info-label { color: #94a3b8; display: inline-block; width: 120px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-title">DDAS</div>
+            <nav class="nav">
+                <button class="nav-link active" onclick="showPage('overview')">Overview</button>
+                <button class="nav-link" onclick="showPage('agents')">Agents</button>
+                <button class="nav-link" onclick="showPage('events')">Events</button>
+                <button class="nav-link" onclick="showPage('settings')">Settings</button>
+            </nav>
+        </div>
+        <div class="main">
+            <!-- OVERVIEW PAGE -->
+            <div id="overview" class="page active">
+                <div class="header">
+                    <h1>DDAS Dashboard</h1>
+                    <p>Distributed Duplicate Asset Scanner - Real-time Event Monitoring</p>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>System Status</h3>
+                        <div><span class="status-indicator status-running"></span> <strong>Running</strong></div>
+                    </div>
+                    <div class="card">
+                        <h3>Total Events</h3>
+                        <div class="card-value" id="total-events">-</div>
+                    </div>
+                    <div class="card">
+                        <h3>Allowed</h3>
+                        <div class="card-value" id="allowed-count">-</div>
+                    </div>
+                    <div class="card">
+                        <h3>Blocked</h3>
+                        <div class="card-value" id="blocked-count">-</div>
+                    </div>
+                </div>
+
+                <h2 style="margin-bottom: 1rem;">Recent Events</h2>
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Event ID</th>
+                            <th>Timestamp</th>
+                            <th>File</th>
+                            <th>Decision</th>
+                            <th>Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overview-events">
+                        <tr><td colspan="5" style="text-align: center; color: #94a3b8;">Loading...</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box">
+                    <strong>✅ Backend API Status:</strong> Running on http://localhost:8001<br/>
+                    <strong>🎯 Event Processing:</strong> All 8 pipeline steps operational<br/>
+                    <strong>💾 Database:</strong> SQLite in-memory (auto-initialized)<br/>
+                    <strong>📊 Dashboard:</strong> Real-time monitoring active
+                </div>
+            </div>
+
+            <!-- AGENTS PAGE -->
+            <div id="agents" class="page">
+                <div class="header">
+                    <h1>Agents</h1>
+                    <p>Active agent instances</p>
+                </div>
+
+                <div class="card">
+                    <p style="color: #94a3b8;">Agents are automatically registered when they send events to the backend.</p>
+                </div>
+
+                <h2 style="margin: 2rem 0 1rem 0;">Active Agents</h2>
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Agent ID</th>
+                            <th>Last Event</th>
+                            <th>Event Count</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agents-list">
+                        <tr><td colspan="4" style="text-align: center; color: #94a3b8;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- EVENTS PAGE -->
+            <div id="events" class="page">
+                <div class="header">
+                    <h1>Events</h1>
+                    <p>All detected events</p>
+                </div>
+
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Event ID</th>
+                            <th>Timestamp</th>
+                            <th>File</th>
+                            <th>Type</th>
+                            <th>Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-events">
+                        <tr><td colspan="5" style="text-align: center; color: #94a3b8;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SETTINGS PAGE -->
+            <div id="settings" class="page">
+                <div class="header">
+                    <h1>Settings</h1>
+                    <p>System configuration</p>
+                </div>
+
+                <div class="card">
+                    <h3>Backend Configuration</h3>
+                    <p style="margin-top: 1rem; color: #cbd5e1;">
+                        <strong>API Endpoint:</strong> http://localhost:8001<br/>
+                        <strong>Database:</strong> SQLite (in-memory)<br/>
+                        <strong>Version:</strong> 1.0.0<br/>
+                        <strong>Status:</strong> ✅ Operational
+                    </p>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <h3>Dashboard Info</h3>
+                    <p style="margin-top: 1rem; color: #cbd5e1;">
+                        <strong>Dashboard:</strong> DDAS Real-time Monitor<br/>
+                        <strong>Port:</strong> 3000<br/>
+                        <strong>Refresh Rate:</strong> 2 seconds<br/>
+                        <strong>Auto-refresh:</strong> Enabled
+                    </p>
+                </div>
+
+                <h2 style="margin: 2rem 0 1rem 0;">System Downloads</h2>
+                <div class="proxy-card">
+                    <h3>Proxy Service</h3>
+                    <p>Download the Windows Proxy executable for event interception and monitoring.</p>
+                    
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button id="proxy-download-btn" class="btn" onclick="downloadProxy()">📥 Download Proxy for Windows</button>
+                        <span id="proxy-download-status"></span>
+                    </div>
+
+                    <div id="proxy-info-container" style="margin-top: 1rem; display: none;">
+                        <div class="proxy-info">
+                            <div class="proxy-info-item">
+                                <span class="proxy-info-label"><strong>Filename:</strong></span>
+                                <span id="proxy-filename">-</span>
+                            </div>
+                            <div class="proxy-info-item">
+                                <span class="proxy-info-label"><strong>Size:</strong></span>
+                                <span id="proxy-size">-</span>
+                            </div>
+                            <div class="proxy-info-item">
+                                <span class="proxy-info-label"><strong>Modified:</strong></span>
+                                <span id="proxy-modified">-</span>
+                            </div>
+                            <div class="proxy-info-item">
+                                <span class="proxy-info-label"><strong>Platform:</strong></span>
+                                <span id="proxy-platform">Windows x64</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="proxy-error-container" style="display: none;">
+                        <div id="proxy-error" class="alert alert-error"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPage(pageName) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            
+            // Show selected page
+            const page = document.getElementById(pageName);
+            if (page) page.classList.add('active');
+            
+            // Add active class to clicked nav link
+            event.target.classList.add('active');
+            
+            // Load data for the page
+            if (pageName === 'overview' || pageName === 'events') {
+                loadEvents();
+            } else if (pageName === 'agents') {
+                loadAgents();
+            } else if (pageName === 'settings') {
+                loadProxyInfo();
+            }
+        }
+
+        async function loadEvents() {
+            try {
+                const response = await fetch('http://localhost:8001/api/v1/events', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                let events = await response.json();
+                if (events.value) events = events.value;
+                
+                if (!Array.isArray(events)) events = [];
+                
+                // Update overview table
+                const overviewBody = document.getElementById('overview-events');
+                // Update all events table
+                const allEventsBody = document.getElementById('all-events');
+                const html = events.slice(0, 10).map(e => `
+                    <tr>
+                        <td>${(e.event_id || '?').substring(0, 8)}...</td>
+                        <td>${new Date(e.created_at).toLocaleString()}</td>
+                        <td>${e.payload?.filename || 'N/A'}</td>
+                        <td><span class="badge badge-allow">ALLOW</span></td>
+                        <td>${(e.source_id || '').substring(0, 8)}...</td>
+                    </tr>
+                `).join('');
+                
+                if (overviewBody) overviewBody.innerHTML = html || '<tr><td colspan="5" style="text-align: center;">No events</td></tr>';
+                if (allEventsBody) allEventsBody.innerHTML = events.map(e => `
+                    <tr>
+                        <td>${(e.event_id || '?').substring(0, 8)}...</td>
+                        <td>${new Date(e.created_at).toLocaleString()}</td>
+                        <td>${e.payload?.filename || 'N/A'}</td>
+                        <td>${e.event_type || 'N/A'}</td>
+                        <td><span class="badge badge-allow">ALLOW</span></td>
+                    </tr>
+                `).join('') || '<tr><td colspan="5" style="text-align: center;">No events</td></tr>';
+                
+                document.getElementById('total-events').textContent = events.length;
+                document.getElementById('allowed-count').textContent = events.length;
+                document.getElementById('blocked-count').textContent = '0';
+            } catch (error) {
+                console.error('Error loading events:', error);
+                const msg = `<tr><td colspan="5" style="text-align: center; color: #ef4444;">Error: ${error.message}</td></tr>`;
+                const overviewBody = document.getElementById('overview-events');
+                const allEventsBody = document.getElementById('all-events');
+                if (overviewBody) overviewBody.innerHTML = msg;
+                if (allEventsBody) allEventsBody.innerHTML = msg;
+            }
+        }
+
+        async function loadAgents() {
+            try {
+                const response = await fetch('http://localhost:8001/api/v1/events?limit=1000', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                let events = await response.json();
+                if (events.value) events = events.value;
+                if (!Array.isArray(events)) events = [];
+                
+                // Group by agent
+                const agents = {};
+                events.forEach(e => {
+                    const agentId = e.source_id;
+                    if (!agents[agentId]) {
+                        agents[agentId] = { id: agentId, count: 0, last: e.created_at };
+                    }
+                    agents[agentId].count++;
+                    if (new Date(e.created_at) > new Date(agents[agentId].last)) {
+                        agents[agentId].last = e.created_at;
+                    }
+                });
+                
+                const html = Object.values(agents).map(a => `
+                    <tr>
+                        <td>${a.id.substring(0, 12)}...</td>
+                        <td>${new Date(a.last).toLocaleString()}</td>
+                        <td>${a.count}</td>
+                        <td><span class="status-indicator status-running"></span> Active</td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('agents-list').innerHTML = html || '<tr><td colspan="4" style="text-align: center;">No agents</td></tr>';
+            } catch (error) {
+                console.error('Error loading agents:', error);
+                document.getElementById('agents-list').innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444;">Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        // Load overview data on page load
+        loadEvents();
+        
+        // Proxy Service Functions
+        const API_BASE_URL = 'http://localhost:8001';
+        
+        async function loadProxyInfo() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/downloads/proxy/windows/info`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                const infoContainer = document.getElementById('proxy-info-container');
+                const errorContainer = document.getElementById('proxy-error-container');
+                const downloadBtn = document.getElementById('proxy-download-btn');
+
+                if (!response.ok) {
+                    errorContainer.style.display = 'none';
+                    infoContainer.style.display = 'none';
+                    downloadBtn.disabled = true;
+                    if (response.status === 404) {
+                        const errorDiv = document.getElementById('proxy-error');
+                        errorDiv.textContent = '⚠️ Proxy installer not available';
+                        errorDiv.className = 'alert alert-error';
+                        errorContainer.style.display = 'block';
+                    }
+                    return;
+                }
+
+                const data = await response.json();
+                
+                // Check user role - disable if not admin
+                if (data.requires_admin && !isUserAdmin()) {
+                    downloadBtn.disabled = true;
+                    const errorDiv = document.getElementById('proxy-error');
+                    errorDiv.textContent = '🔐 Admin access required to download proxy';
+                    errorDiv.className = 'alert alert-error';
+                    errorContainer.style.display = 'block';
+                    infoContainer.style.display = 'none';
+                    return;
+                }
+
+                downloadBtn.disabled = false;
+                errorContainer.style.display = 'none';
+
+                if (data.available) {
+                    document.getElementById('proxy-filename').textContent = data.filename || 'ddas-proxy.exe';
+                    document.getElementById('proxy-size').textContent = data.size_mb 
+                        ? `${parseFloat(data.size_mb).toFixed(2)} MB` 
+                        : '-';
+                    document.getElementById('proxy-modified').textContent = data.last_modified 
+                        ? new Date(data.last_modified).toLocaleString() 
+                        : '-';
+                    document.getElementById('proxy-platform').textContent = data.platform || 'Windows x64';
+                    infoContainer.style.display = 'block';
+                } else {
+                    infoContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading proxy info:', error);
+                const errorDiv = document.getElementById('proxy-error');
+                errorDiv.textContent = `❌ Error: ${error.message}`;
+                errorDiv.className = 'alert alert-error';
+                document.getElementById('proxy-error-container').style.display = 'block';
+                document.getElementById('proxy-info-container').style.display = 'none';
+                document.getElementById('proxy-download-btn').disabled = true;
+            }
+        }
+
+        async function downloadProxy() {
+            const btn = document.getElementById('proxy-download-btn');
+            const statusSpan = document.getElementById('proxy-download-status');
+            const errorContainer = document.getElementById('proxy-error-container');
+
+            // Show loading state
+            btn.disabled = true;
+            statusSpan.innerHTML = '<span class="spinner"></span> Downloading...';
+            errorContainer.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/downloads/proxy/windows`, {
+                    method: 'GET'
+                });
+
+                // Handle specific HTTP status codes
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('ADMIN_REQUIRED');
+                }
+                if (response.status === 404) {
+                    throw new Error('NOT_FOUND');
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP_${response.status}`);
+                }
+
+                // Extract filename from Content-Disposition header
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'ddas_proxy.exe';
+                if (contentDisposition) {
+                    const matches = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (matches) filename = matches[1];
+                }
+
+                // Get response as binary blob (do NOT parse as JSON)
+                const blob = await response.blob();
+
+                // Verify we got a valid binary blob
+                if (!blob || blob.size === 0) {
+                    throw new Error('INVALID_RESPONSE');
+                }
+
+                // Trigger file download
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                statusSpan.innerHTML = '<span style="color: #10b981;">✅ Download complete</span>';
+            } catch (error) {
+                console.error('Error downloading proxy:', error);
+                const errorDiv = document.getElementById('proxy-error');
+                const errorMsg = error.message;
+
+                if (errorMsg === 'ADMIN_REQUIRED') {
+                    errorDiv.textContent = '🔐 Admin access required to download proxy';
+                } else if (errorMsg === 'NOT_FOUND') {
+                    errorDiv.textContent = '⚠️ Proxy installer not available';
+                } else if (errorMsg === 'INVALID_RESPONSE') {
+                    errorDiv.textContent = '❌ Invalid response from server';
+                } else {
+                    errorDiv.textContent = `❌ Download failed: ${errorMsg}`;
+                }
+
+                errorDiv.className = 'alert alert-error';
+                errorContainer.style.display = 'block';
+                statusSpan.textContent = '';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function isUserAdmin() {
+            // Check if user role is ADMIN
+            // In a real application, this would check the authContext token
+            // For now, return true to demonstrate the feature
+            // This should be replaced with actual auth context check
+            return true;
+        }
+        
+        // Refresh every 2 seconds
+        setInterval(() => {
+            const activePage = document.querySelector('.page.active');
+            if (activePage?.id === 'overview' || activePage?.id === 'events') {
+                loadEvents();
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

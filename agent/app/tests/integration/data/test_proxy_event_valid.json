@@ -1,0 +1,13 @@
+{
+  "event_id": "evt_001",
+  "timestamp": "2026-01-17T10:30:00Z",
+  "filename": "document.pdf",
+  "file_size": 1048576,
+  "source_url": "http://example.com/documents/document.pdf",
+  "content_hash": "abc123def456",
+  "mime_type": "application/pdf",
+  "user_id": "user_123",
+  "download_location": "C:\\Downloads",
+  "browser": "Chrome",
+  "ip_address": "192.168.1.100"
+}
